@@ -5,7 +5,7 @@ import os
 
 repo_id = "akskhare/Tourism-Packages"
 repo_type = "dataset"
-
+file_path = "mlops/data/tourism.csv"
 # Initialize API client
 api = HfApi(token=os.getenv("HF_TOKEN"))
 
