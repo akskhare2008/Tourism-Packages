@@ -12,8 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: pip install -r mlops/requirements.txt
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r mlops/requirements.txt
 
       - name: Upload Dataset to Hugging Face Hub
         env:
@@ -26,8 +33,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: pip install -r mlops/requirements.txt
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r mlops/requirements.txt
 
       - name: Run Data Preparation
         env:
@@ -40,30 +54,52 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: pip install -r mlops/requirements.txt
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-      - name: Start MLflow Server
+      - name: Install dependencies
         run: |
-          nohup mlflow ui --host 0.0.0.0 --port 5000 &
-          sleep 10
+          python -m pip install --upgrade pip
+          python -m pip install -r mlops/requirements.txt
 
-      - name: Run Model Training
+      - name: Start MLflow and Run Model Training
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: python mlops/model_building/train.py
+        run: |
+          # Start MLflow UI in background and capture logs
+          nohup mlflow ui --host 127.0.0.1 --port 5000 > mlflow.log 2>&1 &
+          echo "Waiting for MLflow UI on http://127.0.0.1:5000 ..."
+          for i in $(seq 1 60); do
+            if curl -sSf http://127.0.0.1:5000 >/dev/null 2>&1; then
+              echo "MLflow UI is up (after ${i}s)"
+              break
+            fi
+            sleep 1
+          done
+          echo "----- mlflow.log (tail) -----"
+          tail -n 200 mlflow.log || true
+          # Run the training script
+          python mlops/model_building/train.py
 
   deploy-hosting:
-    needs: [model-training, data-prep, register-dataset]
+    needs: model-training
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: pip install -r mlops/requirements.txt
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r mlops/requirements.txt
 
       - name: Deploy Frontend to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python mlops/hosting/hosting.py
-
