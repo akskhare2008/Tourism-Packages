@@ -24,12 +24,7 @@ jobs:
 
       - name: Upload Dataset to Hugging Face Hub
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: python mlops/model_building/data_register.py
-
-  data-prep:
-    needs: register-dataset
-    runs-on: ubuntu-latest
+@@ -26,8 +33,15 @@
     steps:
       - uses: actions/checkout@v3
 
@@ -45,12 +40,7 @@ jobs:
 
       - name: Run Data Preparation
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: python mlops/model_building/prep.py
-
-  model-training:
-    needs: data-prep
-    runs-on: ubuntu-latest
+@@ -40,30 +54,52 @@
     steps:
       - uses: actions/checkout@v3
 
@@ -103,3 +93,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python mlops/hosting/hosting.py
+
