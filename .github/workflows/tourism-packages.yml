@@ -1,9 +1,10 @@
 name: Tourism-Packages Pipeline
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
 
 jobs:
+
   register-dataset:
     runs-on: ubuntu-latest
     steps:
@@ -12,10 +13,11 @@ jobs:
       - name: Install Dependencies
         run: pip install -r mlops/requirements.txt
 
-      - name: Register the Dataset
+      - name: Register Raw Dataset
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python mlops/model_building/data_register.py
+
 
   data-prep:
     needs: register-dataset
@@ -26,10 +28,11 @@ jobs:
       - name: Install Dependencies
         run: pip install -r mlops/requirements.txt
 
-      - name: Data Preparation
+      - name: Preprocess Data (Generates X_train / X_test)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python mlops/model_building/prep.py
+
 
   model-training:
     needs: data-prep
@@ -45,13 +48,14 @@ jobs:
           nohup mlflow ui --host 0.0.0.0 --port 5000 &
           sleep 10
 
-      - name: Model Training
+      - name: Train Model
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python mlops/model_building/train.py
 
+
   deploy-hosting:
-    needs: [register-dataset, data-prep, model-training]
+    needs: model-training
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -59,7 +63,8 @@ jobs:
       - name: Install Dependencies
         run: pip install -r mlops/requirements.txt
 
-      - name: Deploy Hosting
+      - name: Deploy App to HF Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python mlops/hosting/hosting.py
+
