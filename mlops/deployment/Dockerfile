@@ -1,5 +1,8 @@
-# Use a minimal base image with Python 3.9 installed
-FROM python:3.9
+# Use a minimal base image with Python 3.10 installed (updated from 3.9 for Streamlit compatibility)
+FROM python:3.10
+
+# Install system dependencies required for some Python packages (e.g., xgboost, scikit-learn)
+RUN apt-get update && apt-get install -y build-essential libgomp1
 
 # Set the working directory inside the container to /app
 WORKDIR /app
